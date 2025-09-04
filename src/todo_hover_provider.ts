@@ -14,10 +14,28 @@ export class TodoHoverProvider implements vscode.HoverProvider {
 		position: vscode.Position,
 		_token: vscode.CancellationToken,
 	): Promise<vscode.Hover | null> {
-		const todoItem = this.todoManager.getTodoAtPosition(document, position);
+		// First try to get TODO at exact position
+		let todoItem = this.todoManager.getTodoAtPosition(document, position);
 
+		// If not found at exact position, check if there's a TODO on this line
 		if (!todoItem) {
-			return null;
+			todoItem = this.todoManager.getTodoOnLine(document, position.line);
+		}
+
+		// If still no TODO found, check if the line contains a TODO pattern
+		if (!todoItem) {
+			const line = document.lineAt(position.line);
+			const regex = /\bTODO\b/i;
+			if (!regex.test(line.text)) {
+				return null;
+			}
+			// If we reach here, there's a TODO pattern but it's not in our cache
+			// This could happen if the document hasn't been scanned yet
+			await this.todoManager.scanDocument(document);
+			todoItem = this.todoManager.getTodoOnLine(document, position.line);
+			if (!todoItem) {
+				return null;
+			}
 		}
 
 		const markdown = new vscode.MarkdownString();
@@ -63,7 +81,7 @@ export class TodoHoverProvider implements vscode.HoverProvider {
 				`📍 \`${todoItem.file}:${todoItem.line + 1}\`\n\n`,
 			);
 			markdown.appendMarkdown(
-				`[➕ Create Linear Issue](command:linear-todos.createIssue)\n\n`,
+				`[➕ Create Linear Issue](command:linear-todos.createIssueFromLine?${encodeURIComponent(JSON.stringify([document.uri.toString(), todoItem.line]))})\n\n`,
 			);
 		}
 

@@ -1,11 +1,13 @@
 import * as vscode from "vscode";
-import type { LinearService } from "./linear_service";
 import type { TodoItem } from "./types";
 
 export class TodoManager {
 	private todos: Map<string, TodoItem[]> = new Map();
+	private outputChannel?: vscode.OutputChannel;
 
-	constructor(private linearService: LinearService) {}
+	setOutputChannel(outputChannel: vscode.OutputChannel): void {
+		this.outputChannel = outputChannel;
+	}
 
 	async scanDocument(document: vscode.TextDocument): Promise<TodoItem[]> {
 		const todos: TodoItem[] = [];
@@ -56,6 +58,14 @@ export class TodoManager {
 		return todos.find((todo) => todo.range.contains(position)) || null;
 	}
 
+	getTodoOnLine(
+		document: vscode.TextDocument,
+		lineNumber: number,
+	): TodoItem | null {
+		const todos = this.getTodos(document);
+		return todos.find((todo) => todo.line === lineNumber) || null;
+	}
+
 	getTodoCount(document: vscode.TextDocument): number {
 		return this.getTodos(document).length;
 	}
@@ -91,7 +101,14 @@ export class TodoManager {
 		);
 
 		edit.replace(document.uri, fullLineRange, newLineText);
-		await vscode.workspace.applyEdit(edit);
+		const success = await vscode.workspace.applyEdit(edit);
+
+		if (!success) {
+			if (this.outputChannel) {
+				this.outputChannel.appendLine("Failed to apply edit to document");
+			}
+			return;
+		}
 
 		// Update the cached todo item
 		todoItem.linearIssueId = issueId;
@@ -102,6 +119,19 @@ export class TodoManager {
 			new vscode.Position(todoItem.line, 0),
 			new vscode.Position(todoItem.line, newLineText.length),
 		);
+
+		// Update the cache with the modified todo item
+		const relativePath = vscode.workspace.asRelativePath(document.uri.fsPath);
+		const todos = this.todos.get(relativePath) || [];
+		const todoIndex = todos.findIndex(
+			(todo) =>
+				todo.line === todoItem.line &&
+				todo.range.start.isEqual(todoItem.range.start),
+		);
+		if (todoIndex !== -1) {
+			todos[todoIndex] = todoItem;
+			this.todos.set(relativePath, todos);
+		}
 	}
 
 	private getCodeContext(

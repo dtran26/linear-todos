@@ -8,6 +8,7 @@ import { TodoManager } from "./todo_manager";
 let todoManager: TodoManager;
 let statusBarItem: vscode.StatusBarItem;
 let outputChannel: vscode.OutputChannel;
+let decorationProvider: TodoDecorationProvider;
 
 export function activate(context: vscode.ExtensionContext) {
 	// Extension activation logging handled by output channel
@@ -20,8 +21,9 @@ export function activate(context: vscode.ExtensionContext) {
 	// Initialize services
 	const linearService = new LinearService();
 	linearService.setOutputChannel(outputChannel);
-	todoManager = new TodoManager(linearService);
-	const decorationProvider = new TodoDecorationProvider(todoManager);
+	todoManager = new TodoManager();
+	todoManager.setOutputChannel(outputChannel);
+	decorationProvider = new TodoDecorationProvider(todoManager);
 	const hoverProvider = new TodoHoverProvider(todoManager, linearService);
 	const codeActionProvider = new TodoCodeActionProvider(todoManager);
 
@@ -59,6 +61,15 @@ export function activate(context: vscode.ExtensionContext) {
 		"linear-todos.configure",
 		async () => {
 			await configureLinearIntegration();
+		},
+	);
+
+	const createIssueFromLineCommand = vscode.commands.registerCommand(
+		"linear-todos.createIssueFromLine",
+		async (uriString: string, lineNumber: number) => {
+			const uri = vscode.Uri.parse(uriString);
+			const position = new vscode.Position(lineNumber, 0);
+			await createLinearIssueFromTodo(uri, position, linearService);
 		},
 	);
 
@@ -107,6 +118,7 @@ export function activate(context: vscode.ExtensionContext) {
 		openIssueCommand,
 		refreshTodosCommand,
 		configureCommand,
+		createIssueFromLineCommand,
 		hoverProviderDisposable,
 		codeActionProviderDisposable,
 		onDidChangeActiveTextEditor,
@@ -134,10 +146,33 @@ async function createLinearIssueFromTodo(
 	const currentPosition = position || editor.selection.active;
 
 	// Find the TODO item at the current position
-	const todoItem = todoManager.getTodoAtPosition(document, currentPosition);
+	let todoItem = todoManager.getTodoAtPosition(document, currentPosition);
+
+	// If not found at exact position, check if there's a TODO on this line
 	if (!todoItem) {
-		vscode.window.showErrorMessage("No TODO item found at current position");
-		return;
+		todoItem = todoManager.getTodoOnLine(document, currentPosition.line);
+	}
+
+	// If still no TODO found, check if the line contains a TODO pattern
+	if (!todoItem) {
+		const line = document.lineAt(currentPosition.line);
+		const regex = /\bTODO\b/i;
+		if (!regex.test(line.text)) {
+			vscode.window.showErrorMessage(
+				"No TODO item found at current position or line",
+			);
+			return;
+		}
+		// If we reach here, there's a TODO pattern but it's not in our cache
+		// This could happen if the document hasn't been scanned yet
+		await todoManager.scanDocument(document);
+		todoItem = todoManager.getTodoOnLine(document, currentPosition.line);
+		if (!todoItem) {
+			vscode.window.showErrorMessage(
+				"No TODO item found at current position or line",
+			);
+			return;
+		}
 	}
 
 	if (!linearService) {
@@ -162,6 +197,11 @@ async function createLinearIssueFromTodo(
 
 			// Update the TODO comment with the Linear issue ID
 			await todoManager.linkTodoToIssue(document, todoItem, issue.id);
+
+			// Refresh decorations and status bar to show the updated TODO
+			decorationProvider.updateDecorations();
+			updateStatusBar();
+
 			vscode.window.showInformationMessage(
 				`Created Linear issue: ${issue.id} - ${issue.title}`,
 			);
