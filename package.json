@@ -1,41 +1,133 @@
 {
-  "name": "linear-todos",
-  "displayName": "Linear TODOs",
-  "description": "",
-  "version": "0.0.1",
-  "engines": {
-    "vscode": "^1.76.1"
-  },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [],
-  "main": "./out/extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "linear-todos.helloWorld",
-        "title": "Hello World"
-      }
-    ]
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src",
-    "test": "vscode-test"
-  },
-  "devDependencies": {
-    "@types/vscode": "^1.103.0",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "22.x",
-    "@typescript-eslint/eslint-plugin": "^8.39.0",
-    "@typescript-eslint/parser": "^8.39.0",
-    "eslint": "^9.32.0",
-    "typescript": "^5.9.2",
-    "@vscode/test-cli": "^0.0.11",
-    "@vscode/test-electron": "^2.5.2"
-  }
+	"name": "linear-todos",
+	"displayName": "Linear TODOs",
+	"description": "Manage TODOs and tech debt by creating Linear issues directly from code comments",
+	"version": "0.0.1",
+	"publisher": "your-publisher-name",
+	"engines": {
+		"vscode": "^1.76.1"
+	},
+	"categories": [
+		"Other"
+	],
+	"extensionDependencies": [
+		"linear.linear-connect"
+	],
+	"activationEvents": [
+		"onLanguage:typescript",
+		"onLanguage:javascript",
+		"onLanguage:python",
+		"onLanguage:java",
+		"onLanguage:go",
+		"onLanguage:rust",
+		"onLanguage:cpp",
+		"onLanguage:c",
+		"onLanguage:csharp"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "linear-todos.createIssue",
+				"title": "Create Linear Issue from TODO",
+				"icon": "$(issue-opened)"
+			},
+			{
+				"command": "linear-todos.openIssue",
+				"title": "Open Linear Issue",
+				"icon": "$(link-external)"
+			},
+			{
+				"command": "linear-todos.refreshTodos",
+				"title": "Refresh TODOs",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "linear-todos.configure",
+				"title": "Configure Linear Integration",
+				"icon": "$(gear)"
+			}
+		],
+		"configuration": {
+			"title": "Linear TODOs",
+			"properties": {
+				"linearTodos.teamId": {
+					"type": "string",
+					"default": "",
+					"description": "Default Linear team ID for creating issues"
+				},
+				"linearTodos.todoPatterns": {
+					"type": "array",
+					"default": [
+						"TODO",
+						"FIXME",
+						"HACK",
+						"XXX",
+						"BUG"
+					],
+					"description": "Patterns to detect as TODO items"
+				},
+				"linearTodos.autoHighlight": {
+					"type": "boolean",
+					"default": true,
+					"description": "Automatically highlight TODO items in the editor"
+				},
+				"linearTodos.showStatusBar": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show TODO count in status bar"
+				}
+			}
+		},
+		"menus": {
+			"editor/context": [
+				{
+					"command": "linear-todos.createIssue",
+					"when": "editorHasSelection",
+					"group": "linear-todos"
+				}
+			]
+		},
+		"languages": [
+			{
+				"id": "typescript",
+				"extensions": [
+					".ts",
+					".tsx"
+				]
+			},
+			{
+				"id": "javascript",
+				"extensions": [
+					".js",
+					".jsx"
+				]
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"pretest": "npm run compile && npm run lint",
+		"lint": "eslint src",
+		"lint:fix": "eslint src --fix",
+		"test": "vscode-test",
+		"package": "vsce package",
+		"dev": "npm run watch"
+	},
+	"dependencies": {
+		"@linear/sdk": "^27.0.0"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.103.0",
+		"@types/mocha": "^10.0.10",
+		"@types/node": "22.x",
+		"@typescript-eslint/eslint-plugin": "^8.39.0",
+		"@typescript-eslint/parser": "^8.39.0",
+		"eslint": "^9.32.0",
+		"typescript": "^5.9.2",
+		"@vscode/test-cli": "^0.0.11",
+		"@vscode/test-electron": "^2.5.2"
+	}
 }
