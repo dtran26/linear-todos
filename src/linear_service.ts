@@ -297,62 +297,16 @@ export class LinearService {
 	private generateIssueDescription(todoItem: TodoItem, impact: string): string {
 		const fileName = todoItem.file;
 		const fileExtension = fileName.split(".").pop() || "text";
-		const functionContext = this.extractFunctionContext(todoItem.context);
 
 		const description = [
-			"## Summary",
-			this.generateSummary(todoItem, impact),
+			`**Location:** \`${fileName}:${todoItem.line + 1}\``,
 			"",
-			"## Details",
-			`**File:** \`${fileName}\``,
-			`**Line:** ${todoItem.line + 1}`,
-			functionContext ? `**Function/Class:** \`${functionContext}\`` : "",
-			`**Type:** TODO`,
-			"",
-			"## TODO Comment",
-			"```",
-			todoItem.text,
-			"```",
-			"",
-			"## Code Context",
 			`\`\`\`${fileExtension}`,
 			todoItem.context,
 			"```",
-			"",
-			"---",
-			`*Created from VSCode • ${new Date().toLocaleString()}*`,
-			`*[Open in VSCode](vscode://file/${vscode.workspace.workspaceFolders?.[0]?.uri.fsPath}/${fileName}:${todoItem.line + 1})*`,
-		].filter((line) => line !== ""); // Remove empty function context lines
-
-		return description.join("\n");
-	}
-
-	private generateSummary(todoItem: TodoItem, impact: string): string {
-		const cleanText = todoItem.text.replace(/.*TODO:\s*/i, "").trim();
-
-		return `📝 ${cleanText || "TODO item requiring attention"}
-
-**Impact:** ${impact}`;
-	}
-
-	private extractFunctionContext(context: string): string | null {
-		// Look for function declarations, class methods, or class definitions
-		const functionPatterns = [
-			/(?:async\s+)?function\s+(\w+)/i,
-			/(\w+)\s*\([^)]*\)\s*[:{]/,
-			/class\s+(\w+)/i,
-			/const\s+(\w+)\s*=\s*\([^)]*\)\s*=>/,
-			/(\w+):\s*\([^)]*\)\s*=>/,
 		];
 
-		for (const pattern of functionPatterns) {
-			const match = context.match(pattern);
-			if (match?.[1]) {
-				return match[1];
-			}
-		}
-
-		return null;
+		return description.join("\n");
 	}
 
 	private mapImpactToLinearPriority(impact: string): number {
