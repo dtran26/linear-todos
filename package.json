@@ -3,7 +3,7 @@
 	"displayName": "Linear TODOs",
 	"description": "Manage TODOs and tech debt by creating Linear issues directly from code comments",
 	"version": "1.0.0",
-	"publisher": "dtran26",
+	"publisher": "DanTran",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/dtran26/linear-todos.git"
