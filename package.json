@@ -127,7 +127,7 @@
 		"@linear/sdk": "^27.0.0"
 	},
 	"devDependencies": {
-		"@types/vscode": "^1.99.0",
+		"@types/vscode": "^1.65.0",
 		"@types/mocha": "^10.0.10",
 		"@types/node": "22.x",
 		"@typescript-eslint/eslint-plugin": "^8.39.0",
