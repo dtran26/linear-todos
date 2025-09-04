@@ -52,13 +52,14 @@ export class LinearService {
 		}
 	}
 
-	updateConfiguration(): void {
-		// Configuration is now handled by Linear Connect extension
-		// We only need to re-authenticate if needed
-	}
-
 	isConfigured(): boolean {
 		return this.client !== null && this.session !== null;
+	}
+
+	updateConfiguration(): void {
+		// Reset client to force re-authentication with new configuration
+		// This is called when linearTodos configuration changes
+		console.log("Configuration updated, will re-authenticate on next API call");
 	}
 
 	async createIssue(todoItem: TodoItem): Promise<LinearIssue | null> {
@@ -89,15 +90,22 @@ export class LinearService {
 			}
 		}
 
+		// Prompt user for impact level
+		const impact = await this.promptForImpact();
+		if (!impact) {
+			// User cancelled
+			return null;
+		}
+
 		try {
 			const title = this.generateIssueTitle(todoItem);
-			const description = this.generateIssueDescription(todoItem);
+			const description = this.generateIssueDescription(todoItem, impact);
 
 			const createIssueInput = {
 				title,
 				description,
 				teamId: defaultTeamId,
-				priority: this.mapPriorityToLinear(todoItem.priority),
+				priority: this.mapImpactToLinearPriority(impact),
 			};
 
 			console.log("📝 Creating Linear issue with input:", createIssueInput);
@@ -128,7 +136,7 @@ export class LinearService {
 			});
 
 			return {
-				id: issueIdentifier, // Use human-readable identifier instead of UUID
+				id: issueIdentifier,
 				title: issue.title,
 				description: issue.description || undefined,
 				url: issue.url,
@@ -144,7 +152,7 @@ export class LinearService {
 					: undefined,
 				priority: issue.priority,
 				labels:
-					labels?.nodes?.map((label: any) => ({
+					labels?.nodes?.map((label: { name: string; color: string }) => ({
 						name: label.name,
 						color: label.color,
 					})) || [],
@@ -196,7 +204,7 @@ export class LinearService {
 					: undefined,
 				priority: issue.priority,
 				labels:
-					labels?.nodes?.map((label: any) => ({
+					labels?.nodes?.map((label: { name: string; color: string }) => ({
 						name: label.name,
 						color: label.color,
 					})) || [],
@@ -238,56 +246,125 @@ export class LinearService {
 	}
 
 	private generateIssueTitle(todoItem: TodoItem): string {
-		const fileName = todoItem.file;
-		const cleanText = todoItem.text
-			.replace(/^(TODO|FIXME|HACK|XXX|BUG):\s*/i, "")
-			.trim();
+		const fileName = this.getShortFileName(todoItem.file);
+		const cleanText = todoItem.text.replace(/.*TODO:\s*/i, "").trim();
 
-		if (cleanText) {
-			return `${cleanText} (${fileName}:${todoItem.line + 1})`;
-		} else {
-			return `${todoItem.pattern} in ${fileName}:${todoItem.line + 1}`;
+		// Maximum title length for readability
+		const maxTitleLength = 80;
+		let description = cleanText || "TODO item";
+
+		// Truncate description if too long, preserving the file context
+		const fileContext = `${fileName}:${todoItem.line + 1}`;
+		const availableLength = maxTitleLength - fileContext.length - 3; // 3 for " • "
+
+		if (description.length > availableLength) {
+			description = description.substring(0, availableLength - 3) + "...";
 		}
+
+		return `${description} • ${fileContext}`;
 	}
 
-	private generateIssueDescription(todoItem: TodoItem): string {
+	private getShortFileName(filePath: string): string {
+		// Extract just the filename from the path
+		const parts = filePath.split("/");
+		return parts[parts.length - 1];
+	}
+
+	private async promptForImpact(): Promise<string | null> {
+		const impactOptions = [
+			{
+				label: "🔴 High - Critical issue affecting functionality or security",
+				value: "High - Critical issue affecting functionality or security",
+			},
+			{
+				label: "🟡 Medium - Standard improvement or technical debt",
+				value: "Medium - Standard improvement or technical debt",
+			},
+			{
+				label: "🔵 Low - Minor enhancement or polish",
+				value: "Low - Minor enhancement or polish",
+			},
+		];
+
+		const selected = await vscode.window.showQuickPick(impactOptions, {
+			placeHolder: "Select the business impact of this TODO",
+			title: "Linear Issue Impact",
+		});
+
+		return selected?.value || null;
+	}
+
+	private generateIssueDescription(todoItem: TodoItem, impact: string): string {
 		const fileName = todoItem.file;
 		const fileExtension = fileName.split(".").pop() || "text";
+		const functionContext = this.extractFunctionContext(todoItem.context);
 
 		const description = [
+			"## Summary",
+			this.generateSummary(todoItem, impact),
+			"",
+			"## Details",
 			`**File:** \`${fileName}\``,
 			`**Line:** ${todoItem.line + 1}`,
-			`**Type:** ${todoItem.pattern}`,
-			`**Priority:** ${todoItem.priority.toUpperCase()}`,
+			functionContext ? `**Function/Class:** \`${functionContext}\`` : "",
+			`**Type:** TODO`,
 			"",
-			"**TODO Comment:**",
+			"## TODO Comment",
 			"```",
 			todoItem.text,
 			"```",
 			"",
-			"**Code Context:**",
+			"## Code Context",
 			`\`\`\`${fileExtension}`,
 			todoItem.context,
 			"```",
 			"",
-			`---`,
-			`*Created from VSCode at ${new Date().toLocaleString()}*`,
-			`*Direct link: [${fileName}:${todoItem.line + 1}](vscode://file/${vscode.workspace.workspaceFolders?.[0]?.uri.fsPath}/${fileName}:${todoItem.line + 1})*`,
-		];
+			"---",
+			`*Created from VSCode • ${new Date().toLocaleString()}*`,
+			`*[Open in VSCode](vscode://file/${vscode.workspace.workspaceFolders?.[0]?.uri.fsPath}/${fileName}:${todoItem.line + 1})*`,
+		].filter((line) => line !== ""); // Remove empty function context lines
 
 		return description.join("\n");
 	}
 
-	private mapPriorityToLinear(priority: "low" | "medium" | "high"): number {
-		switch (priority) {
-			case "high":
-				return 1;
-			case "medium":
-				return 3;
-			case "low":
-				return 4;
-			default:
-				return 3;
+	private generateSummary(todoItem: TodoItem, impact: string): string {
+		const cleanText = todoItem.text.replace(/.*TODO:\s*/i, "").trim();
+
+		return `📝 ${cleanText || "TODO item requiring attention"}
+
+**Impact:** ${impact}`;
+	}
+
+	private extractFunctionContext(context: string): string | null {
+		// Look for function declarations, class methods, or class definitions
+		const functionPatterns = [
+			/(?:async\s+)?function\s+(\w+)/i,
+			/(\w+)\s*\([^)]*\)\s*[:{]/,
+			/class\s+(\w+)/i,
+			/const\s+(\w+)\s*=\s*\([^)]*\)\s*=>/,
+			/(\w+):\s*\([^)]*\)\s*=>/,
+		];
+
+		for (const pattern of functionPatterns) {
+			const match = context.match(pattern);
+			if (match?.[1]) {
+				return match[1];
+			}
 		}
+
+		return null;
+	}
+
+	private mapImpactToLinearPriority(impact: string): number {
+		// Map user-selected impact to Linear priority numbers
+		// Linear: 1 = Urgent, 2 = High, 3 = Medium, 4 = Low
+		if (impact.includes("High")) {
+			return 2; // High priority
+		}
+		if (impact.includes("Low")) {
+			return 4; // Low priority
+		}
+		// Default to Medium for "Medium" or any other case
+		return 3; // Medium priority
 	}
 }

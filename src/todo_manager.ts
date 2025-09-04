@@ -9,45 +9,32 @@ export class TodoManager {
 
 	async scanDocument(document: vscode.TextDocument): Promise<TodoItem[]> {
 		const todos: TodoItem[] = [];
-		const config = vscode.workspace.getConfiguration("linearTodos");
-		const patterns = config.get<string[]>("todoPatterns", [
-			"TODO",
-			"FIXME",
-			"HACK",
-			"XXX",
-			"BUG",
-		]);
 
 		for (let i = 0; i < document.lineCount; i++) {
 			const line = document.lineAt(i);
 			const lineText = line.text;
 
-			for (const pattern of patterns) {
-				const regex = new RegExp(`\\b${pattern}\\b:?\\s*(.*)`, "i");
-				const match = lineText.match(regex);
+			const regex = /\bTODO\b:?\s*(.*)/i;
+			const match = lineText.match(regex);
 
-				if (match) {
-					const todoText = lineText.trim();
-					const priority = this.determinePriority(pattern, todoText);
-					const context = this.getCodeContext(document, i);
-					const linearIssueId = this.extractLinearIssueId(todoText);
+			if (match) {
+				const todoText = lineText.trim();
+				const context = this.getCodeContext(document, i);
+				const linearIssueId = this.extractLinearIssueId(todoText);
 
-					const todoItem: TodoItem = {
-						text: todoText,
-						pattern,
-						range: new vscode.Range(
-							new vscode.Position(i, match.index || 0),
-							new vscode.Position(i, (match.index || 0) + match[0].length),
-						),
-						line: i,
-						file: vscode.workspace.asRelativePath(document.uri.fsPath),
-						linearIssueId,
-						priority,
-						context,
-					};
+				const todoItem: TodoItem = {
+					text: todoText,
+					range: new vscode.Range(
+						new vscode.Position(i, match.index || 0),
+						new vscode.Position(i, (match.index || 0) + match[0].length),
+					),
+					line: i,
+					file: vscode.workspace.asRelativePath(document.uri.fsPath),
+					linearIssueId,
+					context,
+				};
 
-					todos.push(todoItem);
-				}
+				todos.push(todoItem);
 			}
 		}
 
@@ -88,20 +75,13 @@ export class TodoManager {
 		}
 
 		// Find the TODO pattern in the line and prepend the issue ID
-		const todoPatterns = vscode.workspace
-			.getConfiguration("linearTodos")
-			.get<string[]>("todoPatterns", ["TODO", "FIXME", "HACK", "XXX", "BUG"]);
+		const regex = /(\bTODO\b):?\s*/i;
+		const match = lineText.match(regex);
 
 		let newLineText = lineText;
-		for (const pattern of todoPatterns) {
-			const regex = new RegExp(`(\\b${pattern}\\b):?\\s*`, "i");
-			const match = lineText.match(regex);
-
-			if (match) {
-				// Prepend the issue ID: TODO: becomes [LIN-123] TODO:
-				newLineText = lineText.replace(regex, `[${issueId}] $1: `);
-				break;
-			}
+		if (match) {
+			// Prepend the issue ID: TODO: becomes [LIN-123] TODO:
+			newLineText = lineText.replace(regex, `[${issueId}] $1: `);
 		}
 
 		// Replace the entire line
@@ -122,39 +102,6 @@ export class TodoManager {
 			new vscode.Position(todoItem.line, 0),
 			new vscode.Position(todoItem.line, newLineText.length),
 		);
-	}
-
-	private determinePriority(
-		pattern: string,
-		text: string,
-	): "low" | "medium" | "high" {
-		const upperPattern = pattern.toUpperCase();
-		const upperText = text.toUpperCase();
-
-		// High priority indicators
-		if (
-			upperPattern === "BUG" ||
-			upperPattern === "FIXME" ||
-			upperText.includes("URGENT") ||
-			upperText.includes("CRITICAL") ||
-			upperText.includes("ASAP") ||
-			text.includes("!!!")
-		) {
-			return "high";
-		}
-
-		// Low priority indicators
-		if (
-			upperPattern === "XXX" ||
-			upperText.includes("MINOR") ||
-			upperText.includes("NICE TO HAVE") ||
-			upperText.includes("OPTIONAL")
-		) {
-			return "low";
-		}
-
-		// Default to medium priority
-		return "medium";
 	}
 
 	private getCodeContext(

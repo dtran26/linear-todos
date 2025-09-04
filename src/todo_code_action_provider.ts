@@ -45,27 +45,21 @@ export class TodoCodeActionProvider implements vscode.CodeActionProvider {
 				actions.push(openIssueAction);
 			}
 		} else {
-			// Check if the line contains a potential TODO pattern
+			// Check if the line contains a TODO pattern
 			const line = document.lineAt(position.line);
-			const todoPatterns = vscode.workspace
-				.getConfiguration("linearTodos")
-				.get<string[]>("todoPatterns", ["TODO", "FIXME", "HACK", "XXX", "BUG"]);
+			const regex = /\bTODO\b/i;
 
-			for (const pattern of todoPatterns) {
-				const regex = new RegExp(`\\b${pattern}\\b`, "i");
-				if (regex.test(line.text)) {
-					const createIssueAction = new vscode.CodeAction(
-						"Create Linear Issue from TODO",
-						vscode.CodeActionKind.QuickFix,
-					);
-					createIssueAction.command = {
-						command: "linear-todos.createIssue",
-						title: "Create Linear Issue from TODO",
-						arguments: [document.uri, position],
-					};
-					actions.push(createIssueAction);
-					break;
-				}
+			if (regex.test(line.text)) {
+				const createIssueAction = new vscode.CodeAction(
+					"Create Linear Issue from TODO",
+					vscode.CodeActionKind.QuickFix,
+				);
+				createIssueAction.command = {
+					command: "linear-todos.createIssue",
+					title: "Create Linear Issue from TODO",
+					arguments: [document.uri, position],
+				};
+				actions.push(createIssueAction);
 			}
 		}
 

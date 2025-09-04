@@ -23,29 +23,9 @@ export class TodoHoverProvider implements vscode.HoverProvider {
 		const markdown = new vscode.MarkdownString();
 		markdown.isTrusted = true;
 
-		// Header
-		markdown.appendMarkdown(`## ${todoItem.pattern} Item\n\n`);
-
-		// Priority badge
-		const priorityColor = this.getPriorityColor(todoItem.priority);
-		markdown.appendMarkdown(
-			`**Priority:** <span style="color: ${priorityColor}">●</span> ${todoItem.priority.toUpperCase()}\n\n`,
-		);
-
-		// TODO text
-		markdown.appendMarkdown(`**Description:** ${todoItem.text}\n\n`);
-
-		// File info
-		markdown.appendMarkdown(
-			`**Location:** ${todoItem.file}:${todoItem.line + 1}\n\n`,
-		);
-
-		// Linear integration status
 		if (todoItem.linearIssueId) {
-			markdown.appendMarkdown(`---\n\n`);
-			markdown.appendMarkdown(
-				`### 🔗 Linked Linear Issue: ${todoItem.linearIssueId}\n\n`,
-			);
+			// Rich hover for linked Linear issues
+			markdown.appendMarkdown(`## 🔗 TODO → ${todoItem.linearIssueId}\n\n`);
 
 			// Try to fetch issue details
 			if (this.linearService.isConfigured()) {
@@ -65,18 +45,19 @@ export class TodoHoverProvider implements vscode.HoverProvider {
 				`[🔗 Open in Linear](command:linear-todos.openIssue?${encodeURIComponent(JSON.stringify([todoItem.linearIssueId]))})\n\n`,
 			);
 		} else {
-			markdown.appendMarkdown(`---\n\n`);
-			markdown.appendMarkdown(`### 🎯 Create Linear Issue\n\n`);
+			// Concise hover for unlinked TODOs
+			const cleanText = todoItem.text.replace(/.*TODO:\s*/i, "").trim();
+
 			markdown.appendMarkdown(
-				`[📝 Create Issue](command:linear-todos.createIssue) to track this TODO in Linear\n\n`,
+				`📝 **TODO:** ${cleanText || "Item requiring attention"}\n\n`,
+			);
+			markdown.appendMarkdown(
+				`📍 \`${todoItem.file}:${todoItem.line + 1}\`\n\n`,
+			);
+			markdown.appendMarkdown(
+				`[➕ Create Linear Issue](command:linear-todos.createIssue)\n\n`,
 			);
 		}
-
-		// Code context
-		markdown.appendMarkdown(`### Code Context\n\n`);
-		markdown.appendMarkdown("```typescript\n");
-		markdown.appendMarkdown(todoItem.context);
-		markdown.appendMarkdown("\n```\n\n");
 
 		return new vscode.Hover(markdown, todoItem.range);
 	}
@@ -127,19 +108,6 @@ export class TodoHoverProvider implements vscode.HoverProvider {
 				return "🔵 Low";
 			default:
 				return "⚪ No Priority";
-		}
-	}
-
-	private getPriorityColor(priority: "low" | "medium" | "high"): string {
-		switch (priority) {
-			case "high":
-				return "#dc3545";
-			case "medium":
-				return "#ffc107";
-			case "low":
-				return "#28a745";
-			default:
-				return "#6c757d";
 		}
 	}
 }

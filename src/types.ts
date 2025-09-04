@@ -2,12 +2,10 @@ import type * as vscode from "vscode";
 
 export interface TodoItem {
 	text: string;
-	pattern: string;
 	range: vscode.Range;
 	line: number;
 	file: string;
 	linearIssueId?: string;
-	priority: "low" | "medium" | "high";
 	context: string; // Surrounding code context
 }
 
