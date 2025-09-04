@@ -2,6 +2,7 @@
 	"name": "linear-todos",
 	"displayName": "Linear TODOs",
 	"description": "Manage TODOs and tech debt by creating Linear issues directly from code comments",
+	"icon": "icon.png",
 	"version": "1.0.0",
 	"publisher": "DanTran",
 	"repository": {
