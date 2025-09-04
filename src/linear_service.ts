@@ -191,7 +191,27 @@ export class LinearService {
 		}
 
 		try {
-			const issue = await this.client.issue(issueId);
+			// Try to fetch by identifier first (e.g., "DT-12")
+			let issue;
+			if (issueId.includes("-")) {
+				// This looks like a team identifier (e.g., "DT-12")
+				const issues = await this.client.issues({
+					filter: {
+						number: {
+							eq: parseInt(issueId.split("-")[1]),
+						},
+						team: {
+							key: {
+								eq: issueId.split("-")[0],
+							},
+						},
+					},
+				});
+				issue = issues.nodes[0];
+			} else {
+				// This looks like a UUID
+				issue = await this.client.issue(issueId);
+			}
 
 			if (!issue) {
 				return null;

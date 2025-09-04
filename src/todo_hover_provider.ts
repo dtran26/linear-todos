@@ -35,10 +35,18 @@ export class TodoHoverProvider implements vscode.HoverProvider {
 					);
 					if (issue) {
 						markdown.appendMarkdown(this.formatLinearIssueDetails(issue));
+					} else {
+						markdown.appendMarkdown(
+							`*Issue ${todoItem.linearIssueId} not found*\n\n`,
+						);
 					}
-				} catch {
-					markdown.appendMarkdown(`*Failed to fetch issue details*\n\n`);
+				} catch (error) {
+					markdown.appendMarkdown(
+						`*Failed to fetch issue details: ${error}*\n\n`,
+					);
 				}
+			} else {
+				markdown.appendMarkdown(`*Linear service not configured*\n\n`);
 			}
 
 			markdown.appendMarkdown(
@@ -65,33 +73,28 @@ export class TodoHoverProvider implements vscode.HoverProvider {
 	private formatLinearIssueDetails(issue: LinearIssue): string {
 		const details: string[] = [];
 
-		details.push(`**Title:** ${issue.title}\n`);
-		details.push(`**Status:** ${issue.state.name}\n`);
+		details.push(`**${issue.title}**\n\n`);
+		details.push(`**Status:** ${issue.state.name}`);
 
 		if (issue.assignee) {
-			details.push(`**Assignee:** ${issue.assignee.name}\n`);
+			details.push(` • **Assignee:** ${issue.assignee.name}`);
 		}
 
 		if (issue.priority) {
 			const priorityText = this.mapLinearPriorityToText(issue.priority);
-			details.push(`**Priority:** ${priorityText}\n`);
+			details.push(` • **Priority:** ${priorityText}`);
 		}
 
 		if (issue.labels && issue.labels.length > 0) {
 			const labelText = issue.labels
 				.map((label) => `\`${label.name}\``)
 				.join(", ");
-			details.push(`**Labels:** ${labelText}\n`);
+			details.push(` • **Labels:** ${labelText}`);
 		}
 
-		if (issue.description) {
-			details.push(`\n**Description:**\n${issue.description}\n`);
-		}
-
-		details.push(`\n*Last updated: ${issue.updatedAt.toLocaleDateString()}*\n`);
-
-		// Add backlink to the Linear issue
-		details.push(`\n[🔗 View in Linear](${issue.url})\n\n`);
+		details.push(
+			`\n\n*Last updated: ${issue.updatedAt.toLocaleDateString()}*\n\n`,
+		);
 
 		return details.join("");
 	}
