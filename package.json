@@ -25,9 +25,7 @@
 		"vscode": "^1.103.0"
 	},
 	"categories": [
-		"Other",
-		"Productivity",
-		"Project Management"
+		"Other"
 	],
 	"extensionDependencies": [
 		"linear.linear-connect"
