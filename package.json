@@ -2,13 +2,32 @@
 	"name": "linear-todos",
 	"displayName": "Linear TODOs",
 	"description": "Manage TODOs and tech debt by creating Linear issues directly from code comments",
-	"version": "0.0.1",
-	"publisher": "your-publisher-name",
+	"version": "1.0.0",
+	"publisher": "dtran26",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/dtran26/linear-todos.git"
+	},
+	"bugs": {
+		"url": "https://github.com/dtran26/linear-todos/issues"
+	},
+	"homepage": "https://github.com/dtran26/linear-todos#readme",
+	"license": "MIT",
+	"keywords": [
+		"linear",
+		"todo",
+		"task management",
+		"productivity",
+		"issue tracking",
+		"code comments"
+	],
 	"engines": {
-		"vscode": "^1.76.1"
+		"vscode": "^1.103.0"
 	},
 	"categories": [
-		"Other"
+		"Other",
+		"Productivity",
+		"Project Management"
 	],
 	"extensionDependencies": [
 		"linear.linear-connect"
@@ -55,17 +74,6 @@
 					"type": "string",
 					"default": "",
 					"description": "Default Linear team ID for creating issues"
-				},
-				"linearTodos.todoPatterns": {
-					"type": "array",
-					"default": [
-						"TODO",
-						"FIXME",
-						"HACK",
-						"XXX",
-						"BUG"
-					],
-					"description": "Patterns to detect as TODO items"
 				},
 				"linearTodos.autoHighlight": {
 					"type": "boolean",

@@ -10,7 +10,7 @@ let statusBarItem: vscode.StatusBarItem;
 let outputChannel: vscode.OutputChannel;
 
 export function activate(context: vscode.ExtensionContext) {
-	console.log("Linear TODOs extension is now active!");
+	// Extension activation logging handled by output channel
 
 	// Create output channel for debugging
 	outputChannel = vscode.window.createOutputChannel("Linear TODOs");
@@ -19,6 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Initialize services
 	const linearService = new LinearService();
+	linearService.setOutputChannel(outputChannel);
 	todoManager = new TodoManager(linearService);
 	const decorationProvider = new TodoDecorationProvider(todoManager);
 	const hoverProvider = new TodoHoverProvider(todoManager, linearService);

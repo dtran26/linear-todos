@@ -1,5 +1,49 @@
-out
-dist
-node_modules
-.vscode-test/
+# Dependencies
+node_modules/
+
+# Build artifacts
+out/
 *.vsix
+
+# Development files
+.vscode-test/
+.vscode-test-web/
+
+# Source maps (optional - remove if you don't want them in repo)
+*.js.map
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor directories and files
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

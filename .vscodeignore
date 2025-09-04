@@ -1,11 +1,34 @@
+# Source files
+src/**
+**/*.ts
+**/*.map
+.gitignore
+
+# Development dependencies and tools
+node_modules/**
 .vscode/**
 .vscode-test/**
-src/**
-.gitignore
-.yarnrc
+.vscode-test-web/**
+
+# Build tools and configuration
+tsconfig.json
+eslint.config.mjs
+.eslintrc*
+
+# Development files
 vsc-extension-quickstart.md
-**/tsconfig.json
-**/eslint.config.mjs
-**/*.map
-**/*.ts
-**/.vscode-test.*
+examples/**
+
+# Test files
+**/test/**
+**/*.test.*
+
+# Documentation files to exclude
+
+# Logs and temporary files
+*.log
+.DS_Store
+
+# Package management
+package-lock.json
+yarn.lock

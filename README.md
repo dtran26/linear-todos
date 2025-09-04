@@ -5,9 +5,9 @@ A powerful VSCode extension that integrates with Linear to help manage TODOs and
 ## 🚀 Features
 
 ### 📝 Smart TODO Detection
-- Automatically detects TODO, FIXME, HACK, XXX, and BUG comments in your code
+- Automatically detects TODO comments in your code
 - Supports multiple programming languages (TypeScript, JavaScript, Python, Java, Go, Rust, C++, C#)
-- Configurable patterns to match your team's conventions
+- Clean and simple TODO-only pattern matching
 
 ### 🔗 Linear Integration
 - **One-click issue creation**: Convert any TODO comment into a Linear issue with full context
@@ -17,18 +17,17 @@ A powerful VSCode extension that integrates with Linear to help manage TODOs and
 
 ### 🎨 Visual Indicators
 - **Syntax highlighting**: TODOs are highlighted with different colors based on their status
-- **Priority indicators**: Visual priority badges (🔴 High, 🟡 Medium, 🔵 Low)
 - **Status bar**: Shows total TODO count in the current file
-- **Decorations**: Linked TODOs show ✓, unlinked TODOs show 📝
+- **Decorations**: Linked TODOs show blue highlighting, unlinked TODOs show yellow highlighting
 
 ### ⚡ Smart Features
-- **Automatic priority detection**: Analyzes TODO text to determine priority level
 - **Code context capture**: Includes surrounding code when creating Linear issues
 - **File location tracking**: Precise line and file information in Linear issues
+- **Automatic linking**: TODOs are linked to Linear issues with unique identifiers
 
 ## 📋 Requirements
 
-- VSCode 1.76.1 or higher
+- VSCode 1.103.0 or higher
 - Linear account
 - [Linear Connect extension](https://marketplace.visualstudio.com/items?itemName=Linear.linear-connect) (automatically installed as dependency)
 
@@ -83,7 +82,6 @@ Run the command `Linear TODOs: Configure Linear Integration` from the Command Pa
 This extension contributes the following settings:
 
 * `linearTodos.teamId`: Default Linear team ID for creating issues (optional - uses first available team if not set)
-* `linearTodos.todoPatterns`: Array of patterns to detect as TODOs (default: `["TODO", "FIXME", "HACK", "XXX", "BUG"]`)
 * `linearTodos.autoHighlight`: Enable/disable automatic highlighting of TODO items (default: `true`)
 * `linearTodos.showStatusBar`: Show/hide TODO count in status bar (default: `true`)
 
@@ -95,23 +93,12 @@ The extension recognizes various TODO formats:
 
 ```typescript
 // TODO: Implement user authentication
-// FIXME: Fix memory leak in data processing
-// HACK: Temporary workaround for API limitation
-// XXX: This code needs refactoring
-// BUG: Incorrect calculation in edge cases
-
+// TODO: Fix memory leak in data processing
+// TODO: Refactor this code for better performance
 /* TODO: Multi-line todos are also supported */
 # TODO: Works in Python comments too
-// TODO: Add error handling !!! (High priority)
 ```
 
-### Priority Detection
-
-The extension automatically detects priority levels based on:
-
-- **High Priority**: BUG, FIXME, or keywords like "urgent", "critical", "!!!"
-- **Low Priority**: XXX or keywords like "minor", "optional", "nice to have"
-- **Medium Priority**: Everything else (default)
 
 ## 🚀 Commands
 
@@ -149,7 +136,7 @@ The extension automatically detects priority levels based on:
 - Check that you're authenticated with Linear (try creating an issue to trigger authentication)
 
 ### TODOs Not Detected
-- Check the `todoPatterns` setting to ensure your format is included
+- Make sure you're using the `TODO:` format in your comments
 - Make sure `autoHighlight` is enabled
 - Try refreshing with `Linear TODOs: Refresh TODOs`
 

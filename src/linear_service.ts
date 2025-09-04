@@ -5,10 +5,13 @@ import type { LinearIssue, LinearTeam, TodoItem } from "./types";
 export class LinearService {
 	private client: LinearClient | null = null;
 	private session: vscode.AuthenticationSession | null = null;
+	private outputChannel: vscode.OutputChannel | null = null;
 
 	async ensureAuthenticated(): Promise<boolean> {
 		try {
-			console.log("Attempting to authenticate with Linear...");
+			this.outputChannel?.appendLine(
+				"Attempting to authenticate with Linear...",
+			);
 
 			// Get or create a Linear session using the Linear Connect extension
 			this.session = await vscode.authentication.getSession(
@@ -21,22 +24,20 @@ export class LinearService {
 				this.client = new LinearClient({
 					accessToken: this.session.accessToken,
 				});
-				console.log("✅ Acquired a Linear API session", {
-					account: this.session.account,
-					scopes: this.session.scopes,
-				});
+				this.outputChannel?.appendLine(
+					`✅ Acquired a Linear API session for ${this.session.account.label}`,
+				);
 
 				// Test the connection by fetching viewer info
 				const viewer = await this.client.viewer;
-				console.log("✅ Linear API connection verified", {
-					user: viewer.name,
-					email: viewer.email,
-				});
+				this.outputChannel?.appendLine(
+					`✅ Linear API connection verified for ${viewer.name} (${viewer.email})`,
+				);
 
 				return true;
 			} else {
-				console.error(
-					"❌ Something went wrong, could not acquire a Linear API session.",
+				this.outputChannel?.appendLine(
+					"❌ Could not acquire a Linear API session",
 				);
 				vscode.window.showErrorMessage(
 					"Could not authenticate with Linear. Please try again.",
@@ -44,12 +45,18 @@ export class LinearService {
 				return false;
 			}
 		} catch (error) {
-			console.error("❌ Failed to authenticate with Linear:", error);
+			this.outputChannel?.appendLine(
+				`❌ Failed to authenticate with Linear: ${error}`,
+			);
 			vscode.window.showErrorMessage(
 				"Failed to authenticate with Linear. Please make sure the Linear Connect extension is installed and try again.",
 			);
 			return false;
 		}
+	}
+
+	setOutputChannel(outputChannel: vscode.OutputChannel): void {
+		this.outputChannel = outputChannel;
 	}
 
 	isConfigured(): boolean {
@@ -59,7 +66,9 @@ export class LinearService {
 	updateConfiguration(): void {
 		// Reset client to force re-authentication with new configuration
 		// This is called when linearTodos configuration changes
-		console.log("Configuration updated, will re-authenticate on next API call");
+		this.outputChannel?.appendLine(
+			"Configuration updated, will re-authenticate on next API call",
+		);
 	}
 
 	async createIssue(todoItem: TodoItem): Promise<LinearIssue | null> {
@@ -99,7 +108,7 @@ export class LinearService {
 
 		try {
 			const title = this.generateIssueTitle(todoItem);
-			const description = this.generateIssueDescription(todoItem, impact);
+			const description = this.generateIssueDescription(todoItem);
 
 			const createIssueInput = {
 				title,
@@ -108,13 +117,19 @@ export class LinearService {
 				priority: this.mapImpactToLinearPriority(impact),
 			};
 
-			console.log("📝 Creating Linear issue with input:", createIssueInput);
+			this.outputChannel?.appendLine(
+				`📝 Creating Linear issue: ${createIssueInput.title}`,
+			);
 
 			const issuePayload = await this.client.createIssue(createIssueInput);
-			console.log("📦 Issue payload received:", issuePayload);
+			this.outputChannel?.appendLine(
+				"📦 Issue creation request sent to Linear",
+			);
 
 			const issue = await issuePayload.issue;
-			console.log("📋 Issue object:", issue);
+			this.outputChannel?.appendLine(
+				`📋 Issue created successfully: ${issue?.id}`,
+			);
 
 			if (!issue) {
 				throw new Error("Failed to create issue");
@@ -128,12 +143,9 @@ export class LinearService {
 			// Use the human-readable identifier (team key + issue number)
 			const issueIdentifier = team ? `${team.key}-${issue.number}` : issue.id;
 
-			console.log("Created Linear issue:", {
-				id: issue.id,
-				identifier: issueIdentifier,
-				title: issue.title,
-				url: issue.url,
-			});
+			this.outputChannel?.appendLine(
+				`✅ Created Linear issue: ${issueIdentifier} - ${issue.title}`,
+			);
 
 			return {
 				id: issueIdentifier,
@@ -160,7 +172,9 @@ export class LinearService {
 				updatedAt: new Date(issue.updatedAt),
 			};
 		} catch (error) {
-			console.error("Failed to create Linear issue:", error);
+			this.outputChannel?.appendLine(
+				`❌ Failed to create Linear issue: ${error}`,
+			);
 			vscode.window.showErrorMessage(`Failed to create Linear issue: ${error}`);
 			throw error;
 		}
@@ -212,7 +226,9 @@ export class LinearService {
 				updatedAt: new Date(issue.updatedAt),
 			};
 		} catch (error) {
-			console.error("Failed to fetch Linear issue:", error);
+			this.outputChannel?.appendLine(
+				`❌ Failed to fetch Linear issue: ${error}`,
+			);
 			return null;
 		}
 	}
@@ -240,7 +256,7 @@ export class LinearService {
 				key: team.key,
 			}));
 		} catch (error) {
-			console.error("Failed to fetch Linear teams:", error);
+			this.outputChannel?.appendLine(`❌ Failed to fetch teams: ${error}`);
 			return [];
 		}
 	}
@@ -294,7 +310,7 @@ export class LinearService {
 		return selected?.value || null;
 	}
 
-	private generateIssueDescription(todoItem: TodoItem, impact: string): string {
+	private generateIssueDescription(todoItem: TodoItem): string {
 		const fileName = todoItem.file;
 		const fileExtension = fileName.split(".").pop() || "text";
 
