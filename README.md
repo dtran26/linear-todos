@@ -2,7 +2,7 @@
 
 A VSCode extension that converts TODO comments into Linear issues with full code context.
 
-![Demo](assets/demo.gif)
+![Demo](assets/output.gif)
 
 ## Features
 
