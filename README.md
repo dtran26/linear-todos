@@ -2,6 +2,8 @@
 
 A VSCode extension that converts TODO comments into Linear issues with full code context.
 
+![Demo](assets/demo.gif)
+
 ## Features
 
 - **TODO Detection**: Automatically finds TODO comments in TypeScript, JavaScript, Python, Java, Go, Rust, C++, and C#
