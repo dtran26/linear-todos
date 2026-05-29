@@ -99,8 +99,8 @@ export class LinearService {
 			}
 		}
 
-		// Prompt user for impact level
-		const impact = await this.promptForImpact();
+		// Resolve impact level: prompt the user, or use the configured default
+		const impact = await this.resolveImpact();
 		if (!impact) {
 			// User cancelled
 			return null;
@@ -304,6 +304,24 @@ export class LinearService {
 		// Extract just the filename from the path
 		const parts = filePath.split("/");
 		return parts[parts.length - 1];
+	}
+
+	private async resolveImpact(): Promise<string | null> {
+		const config = vscode.workspace.getConfiguration("linearTodos");
+		const defaultImpact = config.get<string>("defaultImpact", "ask");
+
+		// "ask" (the default) preserves the prompt-on-every-create behavior.
+		// Any other value skips the prompt and uses that fixed impact.
+		switch (defaultImpact) {
+			case "high":
+				return "High - Critical issue affecting functionality or security";
+			case "medium":
+				return "Medium - Standard improvement or technical debt";
+			case "low":
+				return "Low - Minor enhancement or polish";
+			default:
+				return this.promptForImpact();
+		}
 	}
 
 	private async promptForImpact(): Promise<string | null> {
