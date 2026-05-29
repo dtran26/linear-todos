@@ -40,6 +40,7 @@ A VSCode extension that converts TODO comments into Linear issues with full code
 - `linearTodos.teamId`: Default Linear team ID (optional)
 - `linearTodos.autoHighlight`: Enable TODO highlighting (default: true)
 - `linearTodos.showStatusBar`: Show TODO count in status bar (default: true)
+- `linearTodos.defaultImpact`: Impact level applied when creating an issue — `ask` (default, prompts each time) or `high`/`medium`/`low` to skip the prompt and always use that priority
 
 ## Commands
 

@@ -3,7 +3,7 @@
 	"displayName": "Linear TODOs",
 	"description": "Manage TODOs and tech debt by creating Linear issues directly from code comments",
 	"icon": "/assets/icon.png",
-	"version": "1.2.0",
+	"version": "1.3.0",
 	"publisher": "DanTran",
 	"repository": {
 		"type": "git",
@@ -83,6 +83,23 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Show TODO count in status bar"
+				},
+				"linearTodos.defaultImpact": {
+					"type": "string",
+					"enum": [
+						"ask",
+						"high",
+						"medium",
+						"low"
+					],
+					"enumDescriptions": [
+						"Prompt for impact each time an issue is created",
+						"Always create issues as High priority (no prompt)",
+						"Always create issues as Medium priority (no prompt)",
+						"Always create issues as Low priority (no prompt)"
+					],
+					"default": "ask",
+					"description": "Impact level applied when creating a Linear issue from a TODO. Set to a fixed level to skip the impact prompt."
 				}
 			}
 		},
